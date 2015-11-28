@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package port.forwarder;
+package fileserver;
 
 import java.io.*;
 import java.net.*;
@@ -19,8 +19,9 @@ public class JHTTP {
 
   private final File rootDirectory;
   private final int port;
+  private final String bgColor;
 
-  public JHTTP(File rootDirectory, int port) throws IOException {
+  public JHTTP(File rootDirectory, int port, String bgcolor) throws IOException {
 
     if (!rootDirectory.isDirectory()) {
       throw new IOException(rootDirectory
@@ -28,6 +29,7 @@ public class JHTTP {
     }
     this.rootDirectory = rootDirectory;
     this.port = port;
+    this.bgColor = bgcolor;
   }
 
   public void start() throws IOException {
@@ -40,7 +42,7 @@ public class JHTTP {
         try {
           Socket request = server.accept();
           Runnable r = new RequestProcessor(
-              rootDirectory, INDEX_FILE, request);
+              rootDirectory, INDEX_FILE, request, bgColor);
           pool.submit(r);
         } catch (IOException ex) {
           logger.log(Level.WARNING, "Error accepting connection", ex);
@@ -56,7 +58,7 @@ public class JHTTP {
     try {
       docroot = new File(args[0]);
     } catch (ArrayIndexOutOfBoundsException ex) {
-      System.out.println("Usage: java JHTTP docroot port");
+      System.out.println("Usage: java JHTTP docroot port bgcolor");
       return;
     }
 
@@ -69,8 +71,17 @@ public class JHTTP {
       port = 80;
     }
 
+    // The color is also a parameter
+    String bgcolor;
     try {
-      JHTTP webserver = new JHTTP(docroot, port);
+      bgcolor = (args[2]);
+    }catch (ArrayIndexOutOfBoundsException ex) {
+      System.out.println("Usage: java JHTTP docroot port bgcolor");
+      return;
+    }
+    
+    try {
+      JHTTP webserver = new JHTTP(docroot, port, bgcolor);
       webserver.start();
     } catch (IOException ex) {
       logger.log(Level.SEVERE, "Server could not start", ex);

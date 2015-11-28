@@ -3,12 +3,14 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package port.forwarder;
+package fileserver;
 import java.io.*; 
 import java.net.*; 
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files; 
 import java.util.*;
 import java.util.logging.*;
+import java.util.stream.Stream;
 
 public class RequestProcessor implements Runnable {
 
@@ -18,9 +20,11 @@ public class RequestProcessor implements Runnable {
   private File rootDirectory;
   private String indexFileName = "index.html";
   private Socket connection;
+  private String bgColor;
 
   public RequestProcessor(File rootDirectory,
-      String indexFileName, Socket connection) {
+      String indexFileName, Socket connection, String bgcolor) {
+      bgColor = bgcolor;
 
     if (rootDirectory.isFile()) {
       throw new IllegalArgumentException(
@@ -77,18 +81,36 @@ public class RequestProcessor implements Runnable {
             fileName.substring(1, fileName.length()));
 
         if (theFile.canRead()
-            // Don't let clients outside the document root
-            && theFile.getCanonicalPath().startsWith(root)) {
-          byte[] theData = Files.readAllBytes(theFile.toPath());
-          if (version.startsWith("HTTP/")) { // send a MIME header
-            sendHeader(out, "HTTP/1.0 200 OK", contentType, theData.length);
-          }
+        // Don't let clients outside the document root
+        && theFile.getCanonicalPath().startsWith(root)) {
+            
+            
+            String message = "";
 
-          // send the file; it may be an image or other binary data
-          // so use the underlying output stream
-          // instead of the writer
-          raw.write(theData);
-          raw.flush();
+            try(BufferedReader br = new BufferedReader(new FileReader(theFile.getPath()))) {
+                for(String line; (line = br.readLine()) != null; ) {
+                    if(line.equals("<BODY bgcolor=\"\">")){
+                        message += "<BODY bgcolor=" + bgColor + "\n";
+                    }else{
+                        message += line + "\n";
+                    }
+                }
+                // line is not visible here.
+            }
+            System.out.println(message);
+            byte[] theData = message.getBytes();
+            if (version.startsWith("HTTP/")) { // send a MIME header
+            sendHeader(out, "HTTP/1.0 200 OK", contentType, theData.length);
+            }
+
+            // send the file; it may be an image or other binary data
+            // so use the underlying output stream
+            // instead of the writer
+
+            //System.out.write(theData);
+            
+            raw.write(theData);
+            raw.flush();
         } else { // can't find the file
           String body = new StringBuilder("<HTML>\r\n")
               .append("<HEAD><TITLE>File Not Found</TITLE>\r\n")
