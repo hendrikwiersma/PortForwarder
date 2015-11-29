@@ -12,8 +12,7 @@ import java.util.logging.*;
 
 public class JHTTP {
 
-  private static final Logger logger = Logger.getLogger(
-      JHTTP.class.getCanonicalName());
+  private static final Logger logger = Logger.getLogger(JHTTP.class.getCanonicalName());
   private static final int NUM_THREADS = 50;
   private static final String INDEX_FILE = "index.html";
 
@@ -71,7 +70,7 @@ public class JHTTP {
       port = 80;
     }
 
-    // The color is also a parameter
+    // The backgroundcolor is also a parameter
     String bgcolor;
     try {
       bgcolor = (args[2]);
